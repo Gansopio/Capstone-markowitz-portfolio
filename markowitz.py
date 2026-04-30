@@ -56,15 +56,12 @@ print("Dimensión total:", returns.shape)
 # Separar última fecha como testing
 # ============================================================
 
-test_days = 252  # aprox. 1 año bursátil
-
-train_returns = returns.iloc[:-test_days]
-test_returns = returns.iloc[-test_days:]
+train_returns = returns.iloc[:-1]
+test_returns = returns.iloc[-1:]
 
 print("Dimensión train:", train_returns.shape)
 print("Dimensión test:", test_returns.shape)
-print("Fecha inicio test:", test_returns.index[0])
-print("Fecha fin test:", test_returns.index[-1])
+print("Fecha de test:", test_returns.index[0])
 
 
 # ============================================================
@@ -81,50 +78,53 @@ n = len(tickers)
 # 4. Modelo Gurobi
 # ============================================================
 
-model = gp.Model("Markowitz_utilidad")
+# ============================================================
+# 4. Modelo Gurobi por perfiles
+# ============================================================
 
-# Variables (pesos)
-w = model.addVars(n, lb=0, name="w")
+retornos_objetivo_anual = {
+    "muy_conservador": 0.00,
+    "conservador": 0.05,
+    "neutro": 0.10,
+    "arriesgado": 0.15,
+    "muy_arriesgado": 0.20
+}
 
-# Restricción: suma de pesos = 1
-model.addConstr(
-    gp.quicksum(w[i] for i in range(n)) == 1,
-    name="presupuesto"
-)
+resumen = []
 
-# Retorno esperado del portafolio
-portfolio_return = gp.quicksum(
-    mu[i] * w[i]
-    for i in range(n)
-)
+for perfil, R_objetivo_anual in retornos_objetivo_anual.items():
 
-# Varianza del portafolio
-portfolio_variance = gp.quicksum(
-    w[i] * Sigma[i, j] * w[j]
-    for i in range(n)
-    for j in range(n)
-)
-lambdas = [1, 5, 10, 20, 50]
+    R_objetivo_diario = R_objetivo_anual / 252
 
-for lam in lambdas:
-    # Parámetro de aversión al riesgo
-    lambda_risk = lam
+    model = gp.Model(f"Markowitz_{perfil}")
+    model.Params.OutputFlag = 0
 
-    # Función objetivo: maximizar utilidad
-    model.setObjective(
-        portfolio_return - lambda_risk * portfolio_variance,
-        GRB.MAXIMIZE
+    w = model.addVars(n, lb=0, name="w")
+
+    model.addConstr(
+        gp.quicksum(w[i] for i in range(n)) == 1,
+        name="presupuesto"
     )
 
-    # ============================================================
-    # 5. Resolver
-    # ============================================================
+    portfolio_return = gp.quicksum(
+        mu[i] * w[i]
+        for i in range(n)
+    )
+
+    model.addConstr(
+        portfolio_return >= -R_objetivo_diario,
+        name="retorno_minimo_perfil"
+    )
+
+    portfolio_variance = gp.quicksum(
+        w[i] * Sigma[i, j] * w[j]
+        for i in range(n)
+        for j in range(n)
+    )
+
+    model.setObjective(portfolio_variance, GRB.MINIMIZE)
 
     model.optimize()
-
-    # ============================================================
-    # 6. Resultados
-    # ============================================================
 
     if model.status == GRB.OPTIMAL:
 
@@ -134,6 +134,8 @@ for lam in lambdas:
         varianza = pesos @ Sigma @ pesos
         volatilidad = np.sqrt(varianza)
 
+        retorno_test = float(test_returns.to_numpy().flatten() @ pesos)
+
         resultado = pd.DataFrame({
             "Ticker": tickers,
             "Peso": pesos
@@ -142,29 +144,54 @@ for lam in lambdas:
         resultado = resultado[resultado["Peso"] > 1e-6]
         resultado = resultado.sort_values("Peso", ascending=False)
 
-        print(f"\n📊 PORTAFOLIO ÓPTIMO lambda: {lam}")
+        print("\n" + "="*80)
+        print(f"👤 PERFIL: {perfil}")
+        print("="*80)
+
+        print("\n📊 PORTAFOLIO ÓPTIMO")
         print(resultado)
 
-        print("\n📈 Retorno esperado:", retorno_esperado)
-        print("📉 Varianza:", varianza)
-        print("📊 Volatilidad:", volatilidad)
-        # Resultado en la última fecha dejada fuera
-        portfolio_test_returns = test_returns @ pesos
+        print("\n🎯 Retorno objetivo anual:", R_objetivo_anual)
+        print("🎯 Retorno objetivo diario:", R_objetivo_diario)
 
-        retorno_acumulado_test = (1 + portfolio_test_returns).prod() - 1
-        retorno_promedio_diario_test = portfolio_test_returns.mean()
-        volatilidad_diaria_test = portfolio_test_returns.std()
-        volatilidad_anual_test = volatilidad_diaria_test * np.sqrt(252)
+        print("\n📈 Retorno esperado train:", retorno_esperado)
+        print("📉 Varianza train:", varianza)
+        print("📊 Volatilidad train:", volatilidad)
 
-        print("\n🧪 TESTING ÚLTIMO AÑO")
-        print("lambda:", lam)
-        print("Fecha inicio test:", test_returns.index[0])
-        print("Fecha fin test:", test_returns.index[-1])
-        print("Retorno acumulado test:", retorno_acumulado_test)
-        print("Retorno acumulado test (%):", retorno_acumulado_test * 100)
-        print("Retorno promedio diario test:", retorno_promedio_diario_test)
-        print("Volatilidad diaria test:", volatilidad_diaria_test)
-        print("Volatilidad anualizada test:", volatilidad_anual_test)
+        print("\n🧪 TESTING ÚLTIMA FECHA")
+        print("Fecha test:", test_returns.index[0])
+        print("Retorno real test:", retorno_test)
+
+        resumen.append({
+            "perfil": perfil,
+            "retorno_objetivo_anual": R_objetivo_anual,
+            "retorno_objetivo_diario": R_objetivo_diario,
+            "retorno_esperado_train": retorno_esperado,
+            "varianza_train": varianza,
+            "volatilidad_train": volatilidad,
+            "fecha_test": test_returns.index[0],
+            "retorno_test": retorno_test,
+            "num_activos_usados": np.sum(pesos > 1e-6),
+            "peso_maximo": pesos.max()
+        })
 
     else:
-        print("No se encontró solución óptima")
+        print(f"\n❌ No se encontró solución óptima para perfil: {perfil}")
+
+        resumen.append({
+            "perfil": perfil,
+            "retorno_objetivo_anual": R_objetivo_anual,
+            "error": "No óptimo"
+        })
+
+# ============================================================
+# 5. Resumen final
+# ============================================================
+
+resumen_df = pd.DataFrame(resumen)
+
+print("\n\n📌 RESUMEN POR PERFIL")
+print(resumen_df)
+
+resumen_df.to_csv("resumen_perfiles_markowitz.csv", index=False)
+print("\nArchivo guardado: resumen_perfiles_markowitz.csv")
