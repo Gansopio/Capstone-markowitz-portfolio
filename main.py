@@ -6,9 +6,11 @@ import gurobipy as gp
 from gurobipy import GRB
 
 
+import backtesting_mensual
 import leer_y_cargar
 import limpieza
 import modelo_markowitz
+import perfiles
 from testing import testing
 import frontera_eficiente
 
@@ -23,44 +25,7 @@ test_days = 252
 train_returns = returns.iloc[:train_days]
 test_returns = returns.iloc[train_days:train_days + test_days]
 
-perfiles = {
-    "muy conservador": {
-        "perdida_max_anual": 0.00,
-        "lambda": 100000
-    },
-    "conservador": {
-        "perdida_max_anual": 0.05,
-        "lambda": 100
-    },
-    "neutro": {
-        "perdida_max_anual": 0.15,
-        "lambda": 20
-    },
-    "arriesgado": {
-        "perdida_max_anual": 0.30,
-        "lambda": 7.6
-    },
-    "muy arriesgado": {
-        "perdida_max_anual": 0.40,
-        "lambda": 1.3
-    }
-}
-
-print("\nPerfiles disponibles:")
-for p in perfiles:
-    print("-", p)
-
-perfil = input("\nIngrese perfil de usuario: ").lower().strip()
-
-if perfil not in perfiles:
-    raise ValueError("Perfil no válido. Debe ser: " + ", ".join(perfiles.keys()))
-
-R_objetivo_anual = perfiles[perfil]["perdida_max_anual"]
-lam = perfiles[perfil]["lambda"]
-
-print("\nPerfil seleccionado:", perfil)
-print("Pérdida máxima anual aceptada:", R_objetivo_anual)
-print("Lambda asignado:", lam)
+perfil, R_objetivo_anual, lam = perfiles.seleccionar_perfil()
 
 model, w = modelo_markowitz.model_markowitz(
     train_returns,
@@ -69,15 +34,26 @@ model, w = modelo_markowitz.model_markowitz(
     perfil
 )
 
-resultado_test = testing(
-    model,
-    w,
-    train_returns,
-    test_returns,
+#resultado_test = testing(
+#    model,
+#    w,
+#    train_returns,
+#    test_returns,
+#    perfil,
+#    R_objetivo_anual
+#)
+
+
+resultado_mensual = backtesting_mensual.backtesting_mensual_con_decision(
+    returns,
     perfil,
-    R_objetivo_anual
+    R_objetivo_anual,
+    lam,
+    train_days=252*4,
+    test_months=12
 )
 
-print(resultado_test)
+print(resultado_mensual)
+# print(resultado_test)
 
-frontera_eficiente.graficar_frontera_eficiente(train_returns)
+#frontera_eficiente.graficar_frontera_eficiente(train_returns)
