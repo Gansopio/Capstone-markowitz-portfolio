@@ -3,6 +3,43 @@ import numpy as np
 from gurobipy import GRB
 import modelo_markowitz
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def probabilidad_abandono(
+    retorno_mes,
+    perdida_max_anual,
+    x_hat=0
+):
+
+    perdida_max_mensual = perdida_max_anual / 12
+
+    x1 = -retorno_mes - perdida_max_mensual
+
+    if x1 <= 0:
+        return x1, 0
+
+    p1 = sigmoid(x1 - x_hat)
+
+    return x1, p1
+
+def probabilidad_aceptacion(
+    retorno_nuevo,
+    retorno_actual,
+    x_hat=0
+):
+
+    x2 = retorno_nuevo - retorno_actual
+
+    if x2 <= 0:
+        return x2, 0
+
+    p2 = sigmoid(x2 - x_hat)
+
+    return x2, p2
+
+
 
 def backtesting_mensual_con_decision(
     returns,
@@ -69,6 +106,10 @@ def backtesting_mensual_con_decision(
             retorno_esperado_actual = np.dot(mu, pesos_actuales)
             varianza_actual = pesos_actuales @ Sigma @ pesos_actuales
             volatilidad_actual = np.sqrt(varianza_actual)
+            x2, p2 = probabilidad_aceptacion(
+                retorno_esperado_nuevo,
+                retorno_esperado_actual
+            )
             escenario_favorable_actual = retorno_esperado_actual + volatilidad_actual
             escenario_desfavorable_actual = retorno_esperado_actual - volatilidad_actual
 
@@ -94,6 +135,7 @@ def backtesting_mensual_con_decision(
             print("Peso máximo:", pesos_nuevos.max())
             print("Activos usados:", np.sum(pesos_nuevos > 1e-6))
             
+            print("Probabilidad de aceptación P2:", p2)
 
             opcion = input(
                 "\n¿Aceptar nuevo portafolio? Escribe 's' para aceptar o ENTER para mantener anterior: "
@@ -108,10 +150,25 @@ def backtesting_mensual_con_decision(
         portfolio_test_returns = test_returns @ pesos_actuales
         retorno_mes = (1 + portfolio_test_returns).prod() - 1
 
+        if decision == "primer_portafolio":
+            retorno_predicho_mes = retorno_esperado_nuevo * 21
+        else:
+            retorno_predicho_mes = retorno_esperado_actual * 21
+
+        diferencia_prediccion_real = retorno_mes - retorno_predicho_mes
+
+        x1, p1 = probabilidad_abandono(
+            retorno_mes,
+            perdida_max_anual
+        )
+        print("Exceso pérdida sobre perfil:", x1)
+        print("Probabilidad de abandono P1:", p1)
+
         print("\n Resultado real del mes usando portafolio elegido")
         print("Retorno mensual real:", retorno_mes)
         print("Retorno mensual real (%):", retorno_mes * 100)
         print("Decisión:", decision)
+        print("Diferencia real - predicho:", diferencia_prediccion_real)
 
         resumen.append({
             "perfil": perfil,
@@ -128,7 +185,12 @@ def backtesting_mensual_con_decision(
             "retorno_mes": retorno_mes,
             "retorno_mes_pct": retorno_mes * 100,
             "num_activos_actuales": np.sum(pesos_actuales > 1e-6),
-            "peso_maximo_actual": pesos_actuales.max()
+            "peso_maximo_actual": pesos_actuales.max(),
+            "exceso_perdida": x1,
+            "probabilidad_abandono_P1": p1,
+            "probabilidad_aceptacion_P2": p2 if decision != "primer_portafolio" else None,
+            "retorno_predicho_mes": retorno_predicho_mes,
+            "diferencia_prediccion_real": diferencia_prediccion_real,
         })
         input("\nPresione ENTER para continuar al siguiente mes...")
 
