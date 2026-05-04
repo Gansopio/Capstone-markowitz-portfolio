@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np  
 
 def limpiar_datos(returns):
-    # 🚨 Eliminamos acciones con datos irreales / no invertibles
     acciones_a_eliminar = [
         "stock_return_NCPL",
         "stock_return_PROP",

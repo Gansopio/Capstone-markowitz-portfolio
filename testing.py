@@ -11,6 +11,7 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
 
     if model.status == GRB.OPTIMAL:
         pesos = np.array([w[i].X for i in range(n)])
+        peso_caja = 1 - pesos.sum()
 
         retorno_esperado_diario = np.dot(mu, pesos)
         varianza_diaria = pesos @ Sigma @ pesos
@@ -34,21 +35,21 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
         resultado = resultado.sort_values("Peso", ascending=False)
 
         print("\n" + "="*80)
-        print(f"👤 PERFIL: {perfil}")
+        print(f"PERFIL: {perfil}")
         print("="*80)
 
-        print("\n📊 PORTAFOLIO ÓPTIMO")
+        print("\n PORTAFOLIO ÓPTIMO")
         print(resultado)
 
-        print("\n🎯 Pérdida máxima anual aceptada:", perdida_max_anual)
+        print("\n Pérdida máxima anual aceptada:", perdida_max_anual)
 
-        print("\n📈 Retorno esperado diario train:", retorno_esperado_diario)
-        print("📈 Retorno esperado anual train:", retorno_esperado_anual)
-        print("📉 Varianza diaria train:", varianza_diaria)
-        print("📊 Volatilidad diaria train:", volatilidad_diaria)
-        print("📊 Volatilidad anual train:", volatilidad_anual)
+        print("\n Retorno esperado diario train:", retorno_esperado_diario)
+        print(" Retorno esperado anual train:", retorno_esperado_anual)
+        print(" Varianza diaria train:", varianza_diaria)
+        print(" Volatilidad diaria train:", volatilidad_diaria)
+        print(" Volatilidad anual train:", volatilidad_anual)
 
-        print("\n🧪 TESTING")
+        print("\n TESTING")
         print("Fecha inicio test:", test_returns.index[0])
         print("Fecha fin test:", test_returns.index[-1])
         print("Retorno acumulado test:", retorno_acumulado_test)
@@ -73,7 +74,7 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
         }
 
     else:
-        print(f"\n❌ No se encontró solución óptima para perfil: {perfil}")
+        print(f"\n No se encontró solución óptima para perfil: {perfil}")
         return {
             "perfil": perfil,
             "perdida_maxima_anual": perdida_max_anual,

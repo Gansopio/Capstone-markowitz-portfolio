@@ -83,7 +83,7 @@ def backtesting_mensual_con_decision(
             print("Peso máximo:", pesos_actuales.max())
             print("Activos usados:", np.sum(pesos_actuales > 1e-6))
 
-            print("\n📊 NUEVO PORTAFOLIO PROPUESTO\n")
+            print("\n NUEVO PORTAFOLIO PROPUESTO\n")
             print("Retorno esperado anual:", retorno_esperado_nuevo*252)
 
             print("\nRetorno esperado mensual aprox:", retorno_esperado_nuevo * 21)
@@ -137,28 +137,27 @@ def backtesting_mensual_con_decision(
     retorno_acumulado = (1 + resumen_df["retorno_mes"]).prod() - 1
 
     print("\n" + "="*80)
-    print("📊 RESULTADO FINAL DEL BACKTESTING")
+    print("RESULTADO FINAL DEL BACKTESTING")
     print("="*80)
 
-    print("\n📈 Retorno acumulado total del año:")
+    print("\n Retorno acumulado total del año:")
     print(retorno_acumulado)
 
-    print("\n📈 Retorno acumulado total del año (%):")
+    print("\n Retorno acumulado total del año (%):")
     print(retorno_acumulado * 100)
 
-    print("\n📅 Meses evaluados:")
+    print("\n Meses evaluados:")
     print(len(resumen_df))
 
-    print("\n💼 Perfil:")
+    print("\n Perfil:")
     print(perfil)
 
-    print("\n🧠 Lambda utilizado:")
+    print("\n Lambda utilizado:")
     print(lam)
-    
+
 
     resumen_df.to_csv(
         "resumen_backtesting_mensual_decision.csv",
         index=False
     )
-
     return resumen_df

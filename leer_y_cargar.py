@@ -24,7 +24,6 @@ def leer_archivos(carpeta):
         close = df["Close"]
         dividends = df["Dividends"]
 
-        # Retorno diario total
         retorno_diario = (close - close.shift(1) + dividends) / close.shift(1)
 
         retorno_diario.name = ticker
