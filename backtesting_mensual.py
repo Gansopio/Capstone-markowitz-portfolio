@@ -54,7 +54,6 @@ def backtesting_mensual_con_decision(
         n = len(tickers)
 
         pesos_nuevos = np.array([w[i].X for i in range(n)])
-        peso_caja_nuevo = 1 - pesos_nuevos.sum()
 
         retorno_esperado_nuevo = np.dot(mu, pesos_nuevos)
         varianza_nueva = pesos_nuevos @ Sigma @ pesos_nuevos
@@ -73,25 +72,26 @@ def backtesting_mensual_con_decision(
             escenario_favorable_actual = retorno_esperado_actual + volatilidad_actual
             escenario_desfavorable_actual = retorno_esperado_actual - volatilidad_actual
 
-            print("\n📊 PORTAFOLIO ACTUAL")
-            print("Retorno esperado diario:", retorno_esperado_actual)
-            print("Retorno esperado mensual aprox:", retorno_esperado_actual * 21)
-            print("Escenario favorable mensual:", escenario_favorable_actual*21)
-            print("Escenario desfavorable mensual:", escenario_desfavorable_actual*21)
+            print("\n PORTAFOLIO ACTUAL\n")
+            print("Retorno esperado anual:", retorno_esperado_actual*252)
+
+            print("\nRetorno esperado mensual aprox:", retorno_esperado_actual * 21)
+            print("Escenario favorable mensual aprox:", escenario_favorable_actual*21)
+            print("Escenario desfavorable mensual aprox:\n", escenario_desfavorable_actual*21)
 
             print("Volatilidad diaria:", volatilidad_actual)
             print("Peso máximo:", pesos_actuales.max())
             print("Activos usados:", np.sum(pesos_actuales > 1e-6))
 
-            print("\n📊 NUEVO PORTAFOLIO PROPUESTO")
-            print("Retorno esperado diario:", retorno_esperado_nuevo)
-            print("Retorno esperado mensual aprox:", retorno_esperado_nuevo * 21)
-            print("Escenario favorable mensual:", escenario_favorable*21)
-            print("Escenario desfavorable mensual:", escenario_desfavorable*21)
+            print("\n📊 NUEVO PORTAFOLIO PROPUESTO\n")
+            print("Retorno esperado anual:", retorno_esperado_nuevo*252)
+
+            print("\nRetorno esperado mensual aprox:", retorno_esperado_nuevo * 21)
+            print("Escenario favorable mensual aprox:", escenario_favorable*21)
+            print("Escenario desfavorable mensual aprox:\n", escenario_desfavorable*21)
 
             print("Volatilidad diaria:", volatilidad_nueva)
             print("Peso máximo:", pesos_nuevos.max())
-            print("💵 Caja chica (%):", peso_caja_nuevo * 100)
             print("Activos usados:", np.sum(pesos_nuevos > 1e-6))
             
 
@@ -104,10 +104,11 @@ def backtesting_mensual_con_decision(
                 decision = "acepta_nuevo"
             else:
                 decision = "mantiene_anterior"
+
         portfolio_test_returns = test_returns @ pesos_actuales
         retorno_mes = (1 + portfolio_test_returns).prod() - 1
 
-        print("\n📈 Resultado real del mes usando portafolio elegido")
+        print("\n Resultado real del mes usando portafolio elegido")
         print("Retorno mensual real:", retorno_mes)
         print("Retorno mensual real (%):", retorno_mes * 100)
         print("Decisión:", decision)
@@ -135,11 +136,29 @@ def backtesting_mensual_con_decision(
 
     retorno_acumulado = (1 + resumen_df["retorno_mes"]).prod() - 1
 
-    print("\n📈 Resultado real del mes usando portafolio elegido")
-    print("Retorno mensual real:", retorno_acumulado)
-    print("Retorno mensual real (%):", retorno_acumulado * 100)
-    print("Decisión:", decision)
+    print("\n" + "="*80)
+    print("📊 RESULTADO FINAL DEL BACKTESTING")
+    print("="*80)
 
-    resumen_df.to_csv("resumen_backtesting_mensual_decision.csv", index=False)
+    print("\n📈 Retorno acumulado total del año:")
+    print(retorno_acumulado)
+
+    print("\n📈 Retorno acumulado total del año (%):")
+    print(retorno_acumulado * 100)
+
+    print("\n📅 Meses evaluados:")
+    print(len(resumen_df))
+
+    print("\n💼 Perfil:")
+    print(perfil)
+
+    print("\n🧠 Lambda utilizado:")
+    print(lam)
+    
+
+    resumen_df.to_csv(
+        "resumen_backtesting_mensual_decision.csv",
+        index=False
+    )
 
     return resumen_df
