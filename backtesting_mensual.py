@@ -54,10 +54,13 @@ def backtesting_mensual_con_decision(
         n = len(tickers)
 
         pesos_nuevos = np.array([w[i].X for i in range(n)])
+        peso_caja_nuevo = 1 - pesos_nuevos.sum()
 
         retorno_esperado_nuevo = np.dot(mu, pesos_nuevos)
         varianza_nueva = pesos_nuevos @ Sigma @ pesos_nuevos
         volatilidad_nueva = np.sqrt(varianza_nueva)
+        escenario_favorable = retorno_esperado_nuevo + volatilidad_nueva
+        escenario_desfavorable = retorno_esperado_nuevo - volatilidad_nueva
 
         if pesos_actuales is None:
             pesos_actuales = pesos_nuevos
@@ -67,10 +70,15 @@ def backtesting_mensual_con_decision(
             retorno_esperado_actual = np.dot(mu, pesos_actuales)
             varianza_actual = pesos_actuales @ Sigma @ pesos_actuales
             volatilidad_actual = np.sqrt(varianza_actual)
+            escenario_favorable_actual = retorno_esperado_actual + volatilidad_actual
+            escenario_desfavorable_actual = retorno_esperado_actual - volatilidad_actual
 
             print("\n📊 PORTAFOLIO ACTUAL")
             print("Retorno esperado diario:", retorno_esperado_actual)
             print("Retorno esperado mensual aprox:", retorno_esperado_actual * 21)
+            print("Escenario favorable mensual:", escenario_favorable_actual*21)
+            print("Escenario desfavorable mensual:", escenario_desfavorable_actual*21)
+
             print("Volatilidad diaria:", volatilidad_actual)
             print("Peso máximo:", pesos_actuales.max())
             print("Activos usados:", np.sum(pesos_actuales > 1e-6))
@@ -78,9 +86,14 @@ def backtesting_mensual_con_decision(
             print("\n📊 NUEVO PORTAFOLIO PROPUESTO")
             print("Retorno esperado diario:", retorno_esperado_nuevo)
             print("Retorno esperado mensual aprox:", retorno_esperado_nuevo * 21)
+            print("Escenario favorable mensual:", escenario_favorable*21)
+            print("Escenario desfavorable mensual:", escenario_desfavorable*21)
+
             print("Volatilidad diaria:", volatilidad_nueva)
             print("Peso máximo:", pesos_nuevos.max())
+            print("💵 Caja chica (%):", peso_caja_nuevo * 100)
             print("Activos usados:", np.sum(pesos_nuevos > 1e-6))
+            
 
             opcion = input(
                 "\n¿Aceptar nuevo portafolio? Escribe 's' para aceptar o ENTER para mantener anterior: "

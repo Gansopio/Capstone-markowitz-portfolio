@@ -17,9 +17,11 @@ def model_markowitz(train_returns, lam, perdida_max_anual, perfil):
 
     w = model.addVars(n, lb=0, name="w")
 
+    cash = 1 - gp.quicksum(w[i] for i in range(n))
+
     model.addConstr(
-        gp.quicksum(w[i] for i in range(n)) == 1,
-        name="presupuesto"
+        gp.quicksum(w[i] for i in range(n)) <= 1,
+        name="presupuesto_con_caja"
     )
 
     portfolio_return = gp.quicksum(

@@ -1,19 +1,19 @@
 perfiles = {
     "muy conservador": {
         "perdida_max_anual": 0.00,
-        "lambda": 100000
+        "lambda": 10000
     },
     "conservador": {
         "perdida_max_anual": 0.05,
-        "lambda": 100
+        "lambda": 43
     },
     "neutro": {
         "perdida_max_anual": 0.15,
-        "lambda": 20
+        "lambda": 7.6
     },
     "arriesgado": {
         "perdida_max_anual": 0.30,
-        "lambda": 7.6
+        "lambda": 2.4
     },
     "muy arriesgado": {
         "perdida_max_anual": 0.40,
