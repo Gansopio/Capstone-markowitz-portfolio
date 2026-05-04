@@ -77,9 +77,9 @@ def backtesting_mensual_con_decision(
 
             print("\nRetorno esperado mensual aprox:", retorno_esperado_actual * 21)
             print("Escenario favorable mensual aprox:", escenario_favorable_actual*21)
-            print("Escenario desfavorable mensual aprox:\n", escenario_desfavorable_actual*21)
+            print("Escenario desfavorable mensual aprox:", escenario_desfavorable_actual*21)
 
-            print("Volatilidad diaria:", volatilidad_actual)
+            print("\nVolatilidad diaria:", volatilidad_actual)
             print("Peso máximo:", pesos_actuales.max())
             print("Activos usados:", np.sum(pesos_actuales > 1e-6))
 
@@ -88,9 +88,9 @@ def backtesting_mensual_con_decision(
 
             print("\nRetorno esperado mensual aprox:", retorno_esperado_nuevo * 21)
             print("Escenario favorable mensual aprox:", escenario_favorable*21)
-            print("Escenario desfavorable mensual aprox:\n", escenario_desfavorable*21)
+            print("Escenario desfavorable mensual aprox:", escenario_desfavorable*21)
 
-            print("Volatilidad diaria:", volatilidad_nueva)
+            print("\nVolatilidad diaria:", volatilidad_nueva)
             print("Peso máximo:", pesos_nuevos.max())
             print("Activos usados:", np.sum(pesos_nuevos > 1e-6))
             
