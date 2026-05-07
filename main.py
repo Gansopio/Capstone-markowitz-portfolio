@@ -13,6 +13,8 @@ import modelo_markowitz
 import perfiles
 from testing import testing
 import frontera_eficiente
+import grid_search_backtesting
+import graficos_kpis
 
 carpeta = r"C:\Users\Gustavo\Documents\U\Semestre Actual\Capstone\universo_300_acciones\universo_300_acciones"
 
@@ -44,16 +46,16 @@ model, w = modelo_markowitz.model_markowitz(
 #)
 
 
-resultado_mensual = backtesting_mensual.backtesting_mensual_con_decision(
-    returns,
-    perfil,
-    R_objetivo_anual,
-    lam,
-    train_days=252*4,
-    test_months=12
-)
+#resultado_mensual = backtesting_mensual.backtesting_mensual_con_decision(returns,perfil,R_objetivo_anual,lam,train_days=252*4,test_months=12)
 
-print(resultado_mensual)
+#print(resultado_mensual)
 # print(resultado_test)
 
 #frontera_eficiente.graficar_frontera_eficiente(train_returns)
+
+
+#grid_search_backtesting.grid_search_backtesting( returns, perfiles.perfiles)
+
+
+
+graficos_kpis.graficos_grid_search("grid_search_resultados.csv")
