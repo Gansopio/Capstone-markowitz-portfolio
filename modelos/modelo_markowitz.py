@@ -1,15 +1,23 @@
 import gurobipy as gp
 from gurobipy import GRB 
+from sklearn.covariance import LedoitWolf
 
-def model_markowitz(train_returns, lam, perdida_max_anual, perfil):
+def model_markowitz(train_returns, lam, perdida_max_anual, perfil, mu_personalizado=None):
 
-    mu = train_returns.mean().values
-    Sigma = train_returns.cov().values
+    if mu_personalizado is not None:
+        mu = mu_personalizado
+    else:
+        mu = train_returns.mean().values
+
+    #Sigma = train_returns.cov().values
+    lw = LedoitWolf()
+    lw.fit(train_returns.values)
+    Sigma = lw.covariance_
+    
     tickers = list(train_returns.columns)
 
     n = len(tickers)
 
-    # pérdida máxima diaria
     perdida_max_diaria = perdida_max_anual / 252
 
     model = gp.Model(f"Markowitz_lambda_{lam}_{perfil}")
@@ -29,7 +37,7 @@ def model_markowitz(train_returns, lam, perdida_max_anual, perfil):
         for i in range(n)
     )
 
-    # restricción de pérdida esperada
+
     model.addConstr(
         portfolio_return >= -perdida_max_diaria,
         name="perdida_esperada_maxima"

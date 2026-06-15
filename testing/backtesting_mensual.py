@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 from gurobipy import GRB
+from sklearn.covariance import LedoitWolf
 import modelo_markowitz
+import black_litterman
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -74,19 +76,29 @@ def backtesting_mensual_con_decision(
         print("Test :", test_returns.index[0], "a", test_returns.index[-1])
         print("="*80)
 
+        mu_bl, top, bottom, momentum = black_litterman.calcular_mu_black_litterman(
+            train_returns
+        )
+
         model, w = modelo_markowitz.model_markowitz(
             train_returns,
             lam,
             perdida_max_anual,
-            perfil
+            perfil,
+            mu_personalizado=mu_bl
         )
 
         if model.status != GRB.OPTIMAL:
             print("No se encontró solución óptima")
             continue
 
-        mu = train_returns.mean().values
-        Sigma = train_returns.cov().values
+        #mu = train_returns.mean().values
+        mu = mu_bl
+
+        #Sigma = train_returns.cov().values
+        lw = LedoitWolf()
+        lw.fit(train_returns.values)
+        Sigma = lw.covariance_
         tickers = list(train_returns.columns)
         n = len(tickers)
 
@@ -98,6 +110,8 @@ def backtesting_mensual_con_decision(
         escenario_favorable = retorno_esperado_nuevo + volatilidad_nueva
         escenario_desfavorable = retorno_esperado_nuevo - volatilidad_nueva
 
+        p2 = None
+        
         if pesos_actuales is None:
             pesos_actuales = pesos_nuevos
             decision = "primer_portafolio"

@@ -5,7 +5,7 @@ import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
 
-
+import black_litterman
 import backtesting_mensual
 import leer_y_cargar
 import limpieza
@@ -29,21 +29,31 @@ test_returns = returns.iloc[train_days:train_days + test_days]
 
 perfil, R_objetivo_anual, lam = perfiles.seleccionar_perfil()
 
-model, w = modelo_markowitz.model_markowitz(
-    train_returns,
-    lam,
-    R_objetivo_anual,
-    perfil
+mu_bl, top, bottom, momentum = black_litterman.calcular_mu_black_litterman(
+    train_returns
 )
 
-#resultado_test = testing(
-#    model,
-#    w,
-#    train_returns,
-#    test_returns,
-#    perfil,
-#    R_objetivo_anual
-#)
+print("\nMu Black-Litterman:")
+print(mu_bl[:10])
+
+print("\nTop momentum:")
+print(top[:10])
+
+print("\nBottom momentum:")
+print(bottom[:10])
+
+mu_hist = train_returns.mean().values
+
+print("\nComparación primeros 10 activos")
+print("Histórico:")
+print(mu_hist[:10])
+
+print("\nBlack-Litterman:")
+print(mu_bl[:10])
+
+model, w = modelo_markowitz.model_markowitz(train_returns,lam,R_objetivo_anual,perfil,mu_personalizado=mu_bl)
+
+resultado_test = testing(model,w,train_returns,test_returns,perfil,R_objetivo_anual,mu_personalizado=mu_bl)
 
 
 #resultado_mensual = backtesting_mensual.backtesting_mensual_con_decision(returns,perfil,R_objetivo_anual,lam,train_days=252*4,test_months=12)
@@ -58,4 +68,4 @@ model, w = modelo_markowitz.model_markowitz(
 
 
 
-graficos_kpis.graficos_grid_search("grid_search_resultados.csv")
+#graficos_kpis.graficos_grid_search("grid_search_resultados.csv")

@@ -1,11 +1,20 @@
 import pandas as pd
 import numpy as np
 from gurobipy import GRB
+from sklearn.covariance import LedoitWolf
+import modelos.montecarlo as montecarlo 
 
-def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
+def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual, mu_personalizado=None):
     
-    mu = train_returns.mean().values
-    Sigma = train_returns.cov().values
+    if mu_personalizado is not None:
+        mu = mu_personalizado
+    else:
+        mu = train_returns.mean().values
+    
+    lw = LedoitWolf()
+    lw.fit(train_returns.values)
+    Sigma = lw.covariance_
+    # Sigma = train_returns.cov().values
     tickers = list(train_returns.columns)
     n = len(tickers)
 
@@ -16,6 +25,14 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
         retorno_esperado_diario = np.dot(mu, pesos)
         varianza_diaria = pesos @ Sigma @ pesos
         volatilidad_diaria = np.sqrt(varianza_diaria)
+
+        escenarios_mc = montecarlo.simular_montecarlo_normal(
+            retorno_esperado_diario,
+            volatilidad_diaria,
+            dias=252,
+            n_simulaciones=10000,
+            capital_inicial=1000
+)
 
         retorno_esperado_anual = retorno_esperado_diario * 252
         volatilidad_anual = volatilidad_diaria * np.sqrt(252)
@@ -39,7 +56,20 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
         print("="*80)
 
         print("\n PORTAFOLIO ÓPTIMO")
+        
         print(resultado)
+        print("\n Caja chica")
+        print("Peso en caja:", round(peso_caja, 4))
+        print("Caja chica USD:", round(peso_caja * 1000, 2))
+
+        print("\n Escenarios Monte Carlo Normal")
+        print("Desfavorable P5 (%):", round(escenarios_mc["escenario_desfavorable_pct"], 2))
+        print("Neutro P50 (%):", round(escenarios_mc["escenario_neutro_pct"], 2))
+        print("Favorable P95 (%):", round(escenarios_mc["escenario_favorable_pct"], 2))
+
+        print("Capital desfavorable USD:", round(escenarios_mc["capital_desfavorable"], 2))
+        print("Capital neutro USD:", round(escenarios_mc["capital_neutro"], 2))
+        print("Capital favorable USD:", round(escenarios_mc["capital_favorable"], 2))
 
         print("\n Pérdida máxima anual aceptada:", perdida_max_anual)
 
@@ -70,7 +100,14 @@ def testing(model, w, train_returns, test_returns, perfil, perdida_max_anual):
             "retorno_acumulado_test": retorno_acumulado_test,
             "retorno_anualizado_test": retorno_anualizado_test,
             "num_activos_usados": np.sum(pesos > 1e-6),
-            "peso_maximo": pesos.max()
+            "peso_maximo": pesos.max(),
+            "caja_chica_usd": peso_caja * 1000, 
+            "escenario_desfavorable_pct": escenarios_mc["escenario_desfavorable_pct"],
+            "escenario_neutro_pct": escenarios_mc["escenario_neutro_pct"],
+            "escenario_favorable_pct": escenarios_mc["escenario_favorable_pct"],
+            "capital_desfavorable": escenarios_mc["capital_desfavorable"],
+            "capital_neutro": escenarios_mc["capital_neutro"],
+            "capital_favorable": escenarios_mc["capital_favorable"],
         }
 
     else:
